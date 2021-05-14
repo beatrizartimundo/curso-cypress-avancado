@@ -173,6 +173,9 @@ describe('Hacker Stories', () => {
         // cy.assertLoadingIsShownAndHidden()
         cy.wait('@getStories')
 
+        cy.getLocalStorage('search')
+          .should('be.equal', newTerm)
+
         cy.get('.item').should('have.length', 2)
         cy.get(`button:contains(${initialTerm})`)
           .should('be.visible')
@@ -183,10 +186,14 @@ describe('Hacker Stories', () => {
           .should('be.visible')
           .type(newTerm)
         cy.contains('Submit')
+          .should('be.visible')
           .click()
 
         // cy.assertLoadingIsShownAndHidden()
         cy.wait('@getStories')
+
+        cy.getLocalStorage('search')
+          .should('be.equal', newTerm)
 
         cy.get('.item').should('have.length', 2)
         cy.get(`button:contains(${initialTerm})`).should('be.visible')
@@ -208,16 +215,24 @@ describe('Hacker Stories', () => {
           ).as('getRandomStories')
 
           Cypress._.times(6, () => {
+            const randomWord = faker.random.word()
+
             cy.get('#search')
               .clear()
               .should('be.visible')
-              .type(`${faker.random.word()}{enter}`)
+              .type(`${randomWord}{enter}`)
             cy.wait('@getRandomStories')
+            cy.getLocalStorage('search')
+              .should('be.equal', randomWord)
           })
 
           // cy.assertLoadingIsShownAndHidden()
 
-          cy.get('.last-searches button').should('have.length', 5)
+          // cy.get('.last-searches button').should('have.length', 5)
+          cy.get('.last-searches')
+            .within(() => {
+              cy.get('button').should('have.length', 5)
+            })
         })
       })
     })
@@ -242,5 +257,22 @@ context('Errors', () => {
     cy.visit('/')
     cy.wait('@getNetworkFailure')
     cy.get('p:contains(Something went wrong)').should('be.visible')
+  })
+
+  it('shows a "Loading ..." state before showing the results', () => {
+    cy.intercept(
+      'GET',
+      '**/search**',
+      {
+        delay: 1000,
+        fixture: 'stories'
+      }
+    ).as('getStoriesDelay')
+    cy.visit('/')
+
+    cy.assertLoadingIsShownAndHidden()
+    cy.wait('@getStoriesDelay')
+
+    cy.get('.item').should('have.length', 2)
   })
 })

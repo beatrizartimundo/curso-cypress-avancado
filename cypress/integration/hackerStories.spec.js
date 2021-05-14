@@ -24,13 +24,6 @@ describe('Hacker Stories', () => {
     })
 
     context('List of stories', () => {
-      // Since the API is external,
-      // I can't control what it will provide to the frontend,
-      // and so, how can I assert on the data?
-      // This is why this test is being skipped.
-      // TODO: Find a way to test it out.
-      it.skip('shows the right data for all rendered stories', () => {})
-
       it('shows one less stories after dimissing the first story', () => {
         cy.get('.button-small').first().click()
 
@@ -43,15 +36,25 @@ describe('Hacker Stories', () => {
           `**/search?query=${newTerm}&page=0`
         ).as('getNewTerm')
 
-        cy.get('#search').clear().type(`${newTerm}{enter}`)
+        cy.get('#search')
+          .should('be.visible')
+          .clear()
+          .type(`${newTerm}{enter}`)
 
         // cy.assertLoadingIsShownAndHidden()
         cy.wait('@getNewTerm')
+
+        cy.getLocalStorage('search')
+          .should('be.equal', newTerm)
 
         cy.get(`button:contains(${initialTerm})`).should('be.visible').click()
 
         // cy.assertLoadingIsShownAndHidden()
         cy.wait('@getStories')
+
+        cy.getLocalStorage('search')
+          .should('be.equal', initialTerm)
+
         cy.get('.item').should('have.length', 20)
         cy.get('.item').first().should('contain', initialTerm)
         cy.get(`button:contains(${newTerm})`).should('be.visible')
@@ -62,15 +65,6 @@ describe('Hacker Stories', () => {
       // and so, how can I test ordering?
       // This is why these tests are being skipped.
       // TODO: Find a way to test them out.
-      context.skip('Order by', () => {
-        it('orders by title', () => {})
-
-        it('orders by author', () => {})
-
-        it('orders by comments', () => {})
-
-        it('orders by points', () => {})
-      })
 
       context('Search', () => {
         beforeEach(() => {
@@ -87,6 +81,9 @@ describe('Hacker Stories', () => {
 
           // cy.assertLoadingIsShownAndHidden()
           cy.wait('@getNewTerm')
+
+          cy.getLocalStorage('search')
+            .should('be.equal', newTerm)
 
           cy.get('.item').should('have.length', 20)
           cy.get('.item').first().should('contain', newTerm)
